@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thư Viện Số – Đọc sách, sách nói, truyện tranh</title>
+  <meta name="description" content="Thư Viện Số – kho sách điện tử và sách nói miễn phí. Khám phá tri thức, nuôi dưỡng tâm hồn." />
+  <meta name="theme-color" content="#009bd5" />
+  <link rel="icon" href="nam/logo.jpg" type="image/jpeg" />
+
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#009bd5', 50:'#effbff',100:'#d9f3ff',200:'#b8e9ff',300:'#86dbff',400:'#4dcbff',500:'#1ab7ff',600:'#009bd5',700:'#0079a6',800:'#065b7a',900:'#0a4b63' },
+            ink: '#0b1222',
+            gold: { 50:'#fff9e6', 100:'#ffefbf', 200:'#ffe38f', 300:'#ffd650', 400:'#ffc51f', 500:'#f5b400', 600:'#d49a00', 700:'#b78300', 800:'#8a6300', 900:'#6b4d00'}
+          },
+          boxShadow: { soft: '0 10px 30px rgba(0,0,0,.08)', glow: '0 8px 30px rgba(245,180,0,.35)' },
+          backgroundImage: {
+            'grid': 'radial-gradient(circle at 1px 1px, rgba(255,255,255,.15) 1px, transparent 0)',
+            'gold-stripes': 'repeating-linear-gradient(45deg, rgba(255,197,31,.25) 0 10px, rgba(255,255,255,.12) 10px 20px)'
+          },
+          animation:{
+            'shine': 'shine 2.2s linear infinite',
+            'floaty':'floaty 3.5s ease-in-out infinite'
+          },
+          keyframes:{
+            shine:{ '0%':{backgroundPosition:'-200% 0'}, '100%':{backgroundPosition:'200% 0'}},
+            floaty:{ '0%,100%':{transform:'translateY(0px)'}, '50%':{transform:'translateY(-2px)'} }
+          }
+        }
+      },
+      darkMode: 'class'
+    }
+  </script>
+  <style>
+    .fade-in { animation: fade .6s ease both }
+    .float-in { animation: float .8s ease both }
+    @keyframes fade { from {opacity:0; transform: translateY(6px)} to {opacity:1; transform:none} }
+    @keyframes float { from {opacity:.0; transform: translateY(10px) scale(.98)} to {opacity:1; transform:none} }
+    .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .glass { backdrop-filter: saturate(180%) blur(10px); background: rgba(255,255,255,.7) }
+    .glass-dark { backdrop-filter: saturate(180%) blur(10px); background: rgba(13,18,34,.6) }
+    .nav-active { background: rgba(0,0,0,.06); }
+    .nav-active-dark { background: rgba(255,255,255,.08); }
+    dialog::backdrop { background: rgba(0,0,0,.5); }
+    /* Sao đánh giá */
+    .star { cursor: pointer; font-size: 20px; line-height: 1; transition: transform .1s ease; }
+    .star[aria-checked="true"] { transform: scale(1.05); color: gold; }
+
+    /* Hàng TOP 1 vinh danh */
+    .top1-row{
+      position: relative;
+      background: linear-gradient(90deg, rgba(255,230,150,.5), rgba(255,245,200,.8)) !important;
+    }
+    .dark .top1-row{
+      background: linear-gradient(90deg, rgba(255,210,120,.20), rgba(255,230,170,.14)) !important;
+    }
+    .top1-crown{
+      position: absolute;
+      left: .35rem; top: 50%; transform: translateY(-50%);
+      width: 26px; height: 26px;
+      filter: drop-shadow(0 2px 4px rgba(245,180,0,.45));
+      animation: floaty 3s ease-in-out infinite;
+    }
+    .top1-glow{
+      position:absolute; inset:-2px;
+      background: radial-gradient(120px 50% at 10% 50%, rgba(245,180,0,.35), transparent 60%);
+      pointer-events:none;
+      border-radius: 8px;
+    }
+    .shine-bar{
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
+      background-size: 200% 100%;
+      animation: shine 2.8s linear infinite;
+      position:absolute; inset:0; opacity:.35; pointer-events:none;
+    }
+    .rank-badge{
+      font-weight:700; font-size:.85rem;
+      padding:.2rem .5rem; border-radius:999px;
+      background: linear-gradient(180deg, #ffd14d, #f5b400);
+      color:#5b4100; box-shadow:0 2px 10px rgba(245,180,0,.35);
+    }
+    .dark .rank-badge{ color:#2a1d00; }
+  </style>
+</head>
+<body class="bg-slate-50 text-ink dark:bg-slate-900 dark:text-slate-100">
+  <!-- Header -->
+  <header class="fixed top-0 inset-x-0 z-50">
+    <div class="mx-auto max-w-7xl px-4">
+      <div class="mt-3"></div>
+      <div class="glass dark:glass-dark rounded-2xl shadow-soft px-4 py-3 flex items-center gap-3">
+        <button id="btnNav" class="lg:hidden p-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/10" aria-label="Mở menu">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <a href="#home" class="flex items-center gap-3 shrink-0" data-link="home">
+          <img src="nam/logo.jpg" alt="Thư viện số THPT Đồng Đăng" class="h-9 w-auto"/>
+          <span class="hidden sm:block font-bold">Thư viện số THPT Đồng Đăng</span>
+        </a>
+
+        <!-- Top nav pages -->
+        <nav class="ml-auto hidden lg:flex items-center gap-1">
+          <a href="#home" data-link="home" class="px-3 py-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-white/10">Trang chủ</a>
+          <a href="#vinh-danh" data-link="vinh-danh" class="px-3 py-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-white/10">Vinh danh</a>
+          <a href="#sach" data-link="sach" class="px-3 py-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-white/10">Sách</a>
+          <a href="#quyen-gop" data-link="quyen-gop" class="px-3 py-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-white/10">Quyên góp sách</a>
+          <a href="https://www.facebook.com/profile.php?id=61583138231110&mibextid=wwXIfr&rdid=wqEiK6pLFNgThe2k&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1CCWXCqCSJ%2F%3Fmibextid%3DwwXIfr#" target="_blank" class="px-3 py-1.5 text-sm rounded-lg border border-slate-300/70 dark:border-slate-700 hover:bg-white/60 dark:hover:bg-white/10">Facebook</a>
+          <button id="btnTheme" class="p-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/10" aria-label="Đổi giao diện sáng/tối">
+            <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zm10.48 14.32l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM1 13h3v-2H1v2zm19 0h3v-2H3v2zM4.95 19.05l1.41 1.41 1.8-1.79-1.41-1.41-1.8 1.79zM17.66 4.22l1.41-1.41 1.79 1.8-1.41 1.41-1.79-1.8zM12 6a6 6 0 100 12 6 6 0 000-12z"/></svg>
+            <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile drawer -->
+  <aside id="drawer" class="fixed inset-y-0 left-0 z-40 w-80 -translate-x-full transition-transform duration-300 bg-white dark:bg-slate-900 shadow-xl">
+    <div class="p-4 flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">
+      <img src="nam/logo.jpg" class="h-8" alt="logo"/>
+      <strong>Menu</strong>
+      <button id="btnClose" class="ml-auto p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Đóng">✕</button>
+    </div>
+    <nav class="p-2 overflow-y-auto h-[calc(100%-56px)]">
+      <a class="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" href="#home" data-link="home">Trang chủ</a>
+      <a class="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" href="#vinh-danh" data-link="vinh-danh">Vinh danh</a>
+      <a class="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" href="#sach" data-link="sach">Sách</a>
+      <a class="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" href="#quyen-gop" data-link="quyen-gop">Quyên góp sách</a>
+      <a class="block px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" href="https://www.facebook.com/profile.php?id=61583138231110&mibextid=wwXIfr&rdid=wqEiK6pLFNgThe2k&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1CCWXCqCSJ%2F%3Fmibextid%3DwwXIfr#" target="_blank">Facebook</a>
+    </nav>
+  </aside>
+
+  <!-- PAGES -->
+  <main class="pt-28 pb-16">
+    <div class="mx-auto max-w-7xl px-4">
+
+      <!-- PAGE: HOME -->
+      <section id="page-home" class="space-y-10">
+        <!-- Hero -->
+        <div class="rounded-3xl overflow-hidden shadow-soft relative bg-white dark:bg-slate-800">
+          <div class="absolute inset-0 opacity-[0.06] bg-grid bg-[length:18px_18px]"></div>
+          <div class="grid md:grid-cols-2">
+            <div class="p-8 md:p-12">
+              <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight fade-in">THẮP SÁNG VĂN HÓA ĐỌC TRƯỜNG THPT ĐỒNG ĐĂNG</h1>
+              <p class="mt-3 text-slate-600 dark:text-slate-300 fade-in">Hơn 10.000+ đầu sách, sách nói, truyện tranh, phim tài liệu… Hoàn toàn miễn phí & vì cộng đồng.</p>
+              <div class="mt-6 flex gap-3 fade-in">
+                <a href="#sach" class="px-4 py-2.5 rounded-xl bg-primary text-white shadow hover:opacity-90" data-link="sach">Khám phá Sách</a>
+                <a href="#quyen-gop" class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-white/70 dark:hover:bg-white/10">Quyên góp sách</a>
+              </div>
+            </div>
+            <div class="relative order-first md:order-last">
+              <img src="nam/anh panner.jpg" alt="Minh hoạ thư viện số" class="w-full h-full object-cover md:h-[360px]"/>
+              <div class="absolute right-4 bottom-4 bg-white/80 dark:bg-slate-900/80 rounded-xl px-4 py-3 shadow-soft">
+                <p class="text-sm">✨ Cộng đồng: <b>tri thức – trí tuệ – phụng sự</b></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video giới thiệu -->
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xl font-bold">Video giới thiệu</h2>
+            <span class="text-sm text-slate-500 dark:text-slate-400">Click để xem</span>
+          </div>
+          <div id="videoGrid" class="grid gap-5 sm:grid-cols-2 md:grid-cols-3"></div>
+        </section>
+
+        <!-- Thông tin người quản lý -->
+        <section>
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold">Thông tin người quản lý</h2>
+          </div>
+          <div id="managerGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-3"></div>
+        </section>
+
+        <!-- Các hoạt động về sách -->
+        <section>
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold">Các hoạt động về sách của THPT Đồng Đăng</h2>
+            <span class="text-sm text-slate-500 dark:text-slate-400"><code>ACTIVITIES</code></span>
+          </div>
+          <div id="activityGrid" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mt-3"></div>
+        </section>
+      </section>
+
+      <!-- PAGE: VINH DANH -->
+      <section id="page-vinh-danh" class="hidden space-y-6">
+        <div class="rounded-2xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-soft">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold">Bảng vinh danh bạn đọc tích cực</h2>
+            <span class="text-sm text-slate-600 dark:text-slate-300">Xếp hạng theo lượt truy cập</span>
+          </div>
+
+          <div class="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 mt-4">
+            <table class="w-full text-sm relative">
+              <thead class="bg-slate-50 dark:bg-slate-900/60">
+                <tr>
+                  <th class="px-3 py-2 text-left">#</th>
+                  <th class="px-3 py-2 text-left">Tên</th>
+                  <th class="px-3 py-2 text-right">Lượt truy cập</th>
+                  <th class="px-3 py-2 text-right">Huy hiệu</th>
+                </tr>
+              </thead>
+              <tbody id="honorTable"></tbody>
+            </table>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">🏆 Top 1 được gắn vương miện và làm nổi bật.</p>
+        </div>
+      </section>
+
+      <!-- PAGE: SÁCH -->
+      <section id="page-sach" class="hidden space-y-6">
+        <div class="rounded-2xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-soft">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h2 class="text-xl font-bold">Chọn danh mục sách</h2>
+            <button id="btnBackCategory" class="hidden px-3 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-white/60 dark:hover:bg-white/10">← Quay lại danh mục</button>
+          </div>
+
+          <!-- Lưới danh mục -->
+          <div id="categoryGrid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mt-4"></div>
+
+          <!-- Lưới lớp (hiển thị sau khi chọn danh mục) -->
+          <div id="gradeGrid" class="hidden grid sm:grid-cols-2 md:grid-cols-3 gap-5 mt-4"></div>
+        </div>
+      </section>
+
+      <!-- PAGE: QUYÊN GÓP SÁCH -->
+      <section id="page-quyen-gop" class="hidden space-y-6">
+        <div class="rounded-2xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-soft">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h2 class="text-xl font-bold">Quyên góp sách</h2>
+            <a id="donateFormBtn" href="https://docs.google.com/forms/d/e/1FAIpQLSfqNo7q2YgNE11Yonql8WlZY9xLYu71S9t18IDamdQCrOzxfA/viewform?usp=send_form" target="_blank" class="px-4 py-2.5 rounded-xl bg-primary text-white text-sm">Mở Google Form</a>
+          </div>
+          <div class="grid md:grid-cols-2 gap-6 mt-4">
+            <div>
+              <p class="text-sm text-slate-600 dark:text-slate-300">Hỗ trợ thư viện bằng cách tặng sách giấy, PDF, hoặc chia sẻ bản quyền. Điền Google Form hoặc quét mã QR để đóng góp nhanh.</p>
+              <ul class="mt-3 text-sm list-disc list-inside space-y-1">
+                <li>Nhập thông tin sách (tên, tác giả, thể loại).</li>
+                <li>Chọn hình thức quyên góp (sách giấy/PDF/khác).</li>
+                <li>Gửi thông tin liên hệ để chúng tôi xác nhận.</li>
+              </ul>
+            </div>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 grid place-items-center">
+              <img id="qrDonate" src="nam/qr form.jpg" alt="QR quyên góp" class="w-64 h-64 object-contain" />
+              <p class="text-xs text-slate-500 mt-2">Quét mã để mở form</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="border-t border-slate-200 dark:border-slate-800"></div>
+    <div class="mx-auto max-w-7xl px-4 py-10 grid md:grid-cols-4 gap-8">
+      <div>
+        <img src="nam/logo.jpg" class="h-10" alt="Thư Viện Số"/>
+        <p class="mt-3 text-slate-600 dark:text-slate-400">Tài nguyên miễn phí – vì mọi người.</p>
+      </div>
+      <div>
+        <h4 class="font-semibold">LIÊN HỆ VỚI CHÚNG TÔI</h4>
+        <ul class="mt-3 text-sm space-y-1">
+          <li><b>CÔ LƯƠNG TÙNG DƯƠNG (Nhân viên thư viện):</b> 0987782101</li>
+          <li><b>CÔ LÊ THỊ PHƯỢNG (Trưởng ban QL thư viện số):</b> 0965354699</li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold">KÊNH TRUYỀN THÔNG</h4>
+        <ul class="mt-3 text-sm space-y-2">
+          <li>Câu lạc bộ Truyền thông CMC: <a class="text-primary hover:underline" href="https://www.facebook.com/share/1B6TSCTgm3/?mibextid=wwXIfr" target="_blank">Facebook</a></li>
+          <li>Thư viện số THPT Đồng Đăng: <a class="text-primary hover:underline" href="https://www.facebook.com/share/1CCWXCqCSJ/?mibextid=wwXIfr" target="_blank">Facebook</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold">Kết nối</h4>
+        <div class="mt-4">
+          <a class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-white/70 dark:hover:bg-white/10" href="https://www.facebook.com/profile.php?id=61583138231110&mibextid=wwXIfr&rdid=wqEiK6pLFNgThe2k&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1CCWXCqCSJ%2F%3Fmibextid%3DwwXIfr#" target="_blank">Facebook</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal video -->
+  <dialog id="videoModal" class="rounded-2xl w-[95%] max-w-3xl bg-white dark:bg-slate-900 p-0 overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+      <h4 id="videoTitle" class="font-semibold">Xem video</h4>
+      <button id="videoClose" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
+    </div>
+    <div class="aspect-video">
+      <video id="videoPlayer" class="w-full h-full" controls playsinline></video>
+    </div>
+  </dialog>
+
+  <script>
+    // ===== THEME =====
+    const btnTheme = document.getElementById('btnTheme');
+    if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+    btnTheme?.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    // ===== DRAWER =====
+    const drawer = document.getElementById('drawer');
+    document.getElementById('btnNav')?.addEventListener('click', () => drawer.classList.remove('-translate-x-full'));
+    document.getElementById('btnClose')?.addEventListener('click', () => drawer.classList.add('-translate-x-full'));
+
+    // ===== DATA: Video demo =====
+    const VIDEOS = [
+      { id: 'v1', title: '❤️Cuốn sách: Mưa Đỏ (Chu Lai) – Giải khuyến khích VHĐ Lạng Sơn 2025', poster: 'nam/anh vd1.jpg', src: 'nam/a1.mp4' },
+      { id: 'v2', title: '📖Văn tế nghĩa sĩ Cần Giuộc – Giải Ba VHĐ Lạng Sơn 2025', poster: 'nam/anh vd2.jpg', src: 'nam/a2.mp4' },
+      { id: 'v3', title: '💖Chiếc áo lính và Bà mẹ ở Phú Thọ Bác Hồ – Nguyễn Thảo My', poster: 'nam/anh vd3.jpg', src: 'nam/a3.mp4' },
+      { id: 'v4', title: 'Búp Sen Xanh - Sơn Tùng', poster: 'nam/anh vd4.jpg', src: 'nam/a4.mp4' },
+      { id: 'v5', title: '💗Áo Ấm Bác Trao – Hoàng Nguyệt Ánh – Giải Ba', poster: 'nam/anh vd5.jpg', src: 'nam/a5.mov' },
+    ];
+
+    // ===== QUẢN LÝ (ví dụ) =====
+    const MANAGERS = [
+      { name: 'Cô Lê Thị Phượng', role: 'GV Ngữ văn – Trưởng ban Quản lí Thư viện số', avatar: 'nam/phuong.jpg' },
+      { name: 'Cô Lương Tùng Dương', role: 'Nhân viên Thư viện – Hỗ trợ bạn đọc', avatar: 'nam/duong.jpg' },
+      { name: 'Nguyễn Vũ Thái Bình', role: 'HS 12A1 – Phó ban Quản lí Thư viện số' , avatar: 'nam/binh.jpg' },
+      { name: 'Hoàng Nguyệt Ánh', role: 'HS 12A2 – Thành viên Ban Quản lí', avatar: 'nam/ánh.jpg' },
+      { name: 'Lăng Hứa Ngọc Anh', role: 'HS 11A3 – Thành viên Ban Quản lí',  avatar: 'nam/ngoc anh.jpg' },
+    ];
+
+    // ===== ẢNH HOẠT ĐỘNG (ví dụ) =====
+    const ACTIVITIES = [
+      { src: 'nam/hoi1.jpg', alt: 'Hoạt động 1' },
+      { src: 'nam/hoi2.jpg', alt: 'Hoạt động 2' },
+      { src: 'nam/hoi3.jpg', alt: 'Hoạt động 3' },
+      { src: 'nam/hoi4.jpg', alt: 'Hoạt động 4' },
+      { src: 'nam/hoi5.jpg', alt: 'Hoạt động 5' },
+      { src: 'nam/hoi6.jpg', alt: 'Hoạt động 6' },
+      { src: 'nam/hoi7.jpg', alt: 'Hoạt động 7' },
+      { src: 'nam/hoi10.jpg', alt: 'Hoạt động 8' },
+    ];
+
+    // ===== VINH DANH =====
+    const TOP_READERS = [
+      { name: 'Âu Vân Anh', visits: 16753 },
+      { name: 'Nguyễn Thuỷ Chi', visits: 16574 },
+      { name: 'Tôn Bảo Yến', visits: 15432 },
+      { name: 'Doãn Hoàng Dung', visits: 14532 },
+      { name: 'Nguyễn Đặng Mỹ Khuê', visits: 13376 },
+      { name: 'Hứa Minh Thuý', visits: 12758 },
+      { name: 'Hoàng Hồng Hải', visits: 10256 },
+      { name: 'Nguyễn Thị Phương Anh', visits: 9867 },
+      { name: 'Ngàn Khánh Vy', visits: 8765 },
+      { name: 'Trần Kim Anh', visits: 8427 },
+    ];
+
+    // ===== DANH MỤC SÁCH =====
+    const CATEGORIES = [
+      { slug:'hoc-tap', title:'Sách học tập', icon:'📘', grades:[
+        { grade:'Lớp 10', qr:'nam/hoctaplop10.jpg', drive:'https://drive.google.com/drive/folders/12p3tlmhD9C0incanW52Gyi1plap61aS8?usp=drive_link' },
+        { grade:'Lớp 11', qr:'nam/hoctaplop11.jpg', drive:'https://drive.google.com/drive/folders/1_O1AQw0IQMbl8ONZkfQMsK78iSRbEgTj?usp=drive_link' },
+        { grade:'Lớp 12', qr:'nam/hoctaplop12.jpg', drive:'https://drive.google.com/drive/folders/1vkSOZ0b68sEcVKDJXparrDp0NRs32Gvn?usp=drive_link' },
+      ]},
+      { slug:'lich-su', title:'Sách lịch sử', icon:'🏛️', grades:[
+        { grade:'LỊCH SỬ THẾ GIỚI', qr:'nam/lichsuthegioi.jpg', drive:'https://drive.google.com/drive/folders/1HX7tvDhtOtE2hIoRuJ5v2vD6w5on7L9u?usp=drive_link' },
+        { grade:'LỊCH SỬ VIỆT NAM', qr:'nam/lichsuvietnam.jpg', drive:'https://drive.google.com/drive/folders/1Pvz3_Jk1fXjPTzh6NsbXMfhm6XezzmE6?usp=drive_link' },
+      ]},
+      { slug:'van-hoc', title:'Sách văn học', icon:'🧭', grades:[
+        { grade:'Sách văn học tổng hợp', qr:'nam/sachvanhoc.jpg', drive:'https://drive.google.com/drive/folders/11fa_EX9ixrUba5edCheEQ7qPf_0Nqf4e?usp=drive_link' },
+      ]},
+      { slug:'sach-truyen', title:'Sách truyện', icon:'📖', grades:[
+        { grade:'TRUYỆN CƯỜI', qr:'nam/truyencuoi.jpg', drive:'https://drive.google.com/drive/folders/1th9U3MV8Q0OEp2mhxoPmNes6cWiGSqp0?usp=drive_link' },
+        { grade:'TRUYỆN KINH DỊ', qr:'nam/truyenkinhdi.jpg', drive:'https://drive.google.com/drive/folders/1yKkncwlNDoAvfqkutg10NdIdFH5J9Iyt?usp=drive_link' },
+        { grade:'TRUYỆN TEEN – TUỔI HỌC TRÒ', qr:'nam/truyenteen.jpg', drive:'https://drive.google.com/drive/folders/1lA4yAX9-nsewiK_ojSWVaAF3in44O8oB?usp=drive_link' },
+      ]},
+      { slug:'ngoai-ngu', title:'Sách học ngoại ngữ', icon:'🌍', grades:[
+        { grade:'Ngoại ngữ', qr:'nam/ngoaingu.jpg', drive:'https://drive.google.com/drive/folders/1o2I5eYYgZ_k5ZZ8FhaYWpSK_6GUqFeQ_?usp=drive_link' },
+      ]},
+      { slug:'khoa-hoc', title:'Sách khoa học', icon:'🔬', grades:[
+        { grade:'HÓA HỌC', qr:'nam/hoahoc.jpg', drive:'https://drive.google.com/drive/folders/1sGqAiS-y8mfS8izgm_IhmnBUHnbY9XH8?usp=drive_link' },
+        { grade:'SINH HỌC', qr:'nam/sinhhoc.jpg', drive:'https://drive.google.com/drive/folders/1_MpzdPmK5R-8e83Fq-IxcdInC9wbb3f4?usp=drive_link' },
+        { grade:'TOÁN HỌC', qr:'nam/toanhoc.jpg', drive:'https://drive.google.com/drive/folders/12kNbkTHt7aKkkIGSu70RIQhGRSUtpYJZ?usp=drive_link' },
+        { grade:'VẬT LÝ', qr:'nam/vatly.jpg', drive:'https://drive.google.com/drive/folders/16jKFKiN2fw9GQW71fRtOof6j4po5-2An?usp=drive_link' },
+      ]},
+      { slug:'giao-khoa', title:'Sách giáo khoa', icon:'📗', grades:[
+        { grade:'Lớp 10', qr:'nam/giaokhoa10.jpg', drive:'https://drive.google.com/drive/folders/13AUmo8c8-3__RyecVCQ1eVpsv5_WPRSZ?usp=drive_link' },
+        { grade:'Lớp 11', qr:'nam/giaokhoa11.jpg', drive:'https://drive.google.com/drive/folders/1lPHO3jErOIvMAo1wxiX43NN4iuzvlOog?usp=drive_link' },
+        { grade:'Lớp 12', qr:'nam/giaokhoa12.jpg', drive:'https://drive.google.com/drive/folders/1zeq1sK2a6_vj94vAxSpClm5lNwbv4ZTr?usp=drive_link' },
+      ]},
+      { slug:'tam-ly', title:'Sách tâm lý – tình cảm', icon:'💖', grades:[
+        { grade:'tâm lý tình cảm', qr:'nam/tamlytinhcam.jpg', drive:'https://drive.google.com/drive/folders/1c8w7rk7lpDC4hoIPji9PsifAgvP-aSJ0?usp=drive_link' },
+      ]},
+    ];
+
+    // ===== REVIEW STORAGE (online qua Netlify Functions + Blobs) =====
+    const REVIEW_ENDPOINT = '/.netlify/functions/reviews';
+    function reviewStorageKey(key){ return `reviews:${key}`; }
+
+    const DEFAULT_REVIEW = {
+      name: "Hoàng Nguyệt Ánh – HS 12A2",
+      title: "Kho tài liệu đầy đủ và dễ tìm!",
+      text: "Mục Lớp 10 rất tiện, tài liệu rõ ràng. Mọi người nhớ góp ý để thư viện ngày càng tốt hơn nhé.",
+      rating: 5,
+      ts: Date.now() - 36e5
+    };
+
+    async function loadReviews(key){
+      if (REVIEW_ENDPOINT){
+        try{
+          const res = await fetch(`${REVIEW_ENDPOINT}?key=${encodeURIComponent(key)}`);
+          if(!res.ok) throw new Error('Fetch reviews failed');
+          const data = await res.json();
+          // Nếu server chưa có dữ liệu thì vẫn trả mặc định 1 bình luận mẫu
+          return Array.isArray(data) && data.length ? data : [DEFAULT_REVIEW];
+        }catch(e){ console.warn('Load remote reviews fail, fallback localStorage', e); }
+      }
+      try{
+        const raw = localStorage.getItem(reviewStorageKey(key));
+        if (raw){
+          const list = JSON.parse(raw);
+          return list.length ? list : [DEFAULT_REVIEW];
+        }
+      }catch{}
+      return [DEFAULT_REVIEW];
+    }
+
+    async function saveReview(key, review){
+      review.ts = Date.now();
+      if (REVIEW_ENDPOINT){
+        try{
+          const res = await fetch(REVIEW_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({ key, review })
+          });
+          if(res.ok) return true;
+        }catch(e){ console.warn('Save remote review fail, fallback localStorage', e); }
+      }
+      const list = await loadReviews(key);
+      list.push(review);
+      localStorage.setItem(reviewStorageKey(key), JSON.stringify(list));
+      return true;
+    }
+
+    function avgRating(list){
+      if(!list.length) return {avg:0,count:0};
+      const sum = list.reduce((s,r)=>s+(Number(r.rating)||0),0);
+      return { avg: (sum/list.length), count: list.length };
+    }
+
+    function escapeHtml(s=''){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+    // ===== HELPERS =====
+    const $ = (sel, ctx=document) => ctx.querySelector(sel);
+    const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+    function setActiveLink(name){
+      $$('[data-link]').forEach(a=>{
+        const isActive = a.getAttribute('data-link') === name;
+        a.classList.toggle('nav-active', isActive && !document.documentElement.classList.contains('dark'));
+        a.classList.toggle('nav-active-dark', isActive && document.documentElement.classList.contains('dark'));
+      });
+    }
+
+    // ===== RENDER HOME VIDEOS =====
+    const videoGrid = document.getElementById('videoGrid');
+    function renderVideos(){
+      videoGrid.innerHTML = VIDEOS.map(v => `
+        <article class="group rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-soft float-in">
+          <button data-open-video="${v.id}" class="block relative text-left w-full">
+            <img src="${v.poster}" alt="${v.title}" class="w-full aspect-video object-cover" loading="lazy"/>
+            <span class="absolute inset-0 grid place-items-center text-white/95">
+              <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60">▶ Xem</span>
+            </span>
+          </button>
+          <div class="p-3"><h3 class="font-semibold clamp-2">${v.title}</h3></div>
+        </article>
+      `).join('');
+    }
+
+    // ===== VIDEO MODAL =====
+    const videoModal = document.getElementById('videoModal');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoTitle = document.getElementById('videoTitle');
+    function bindVideoEvents(){
+      videoGrid.addEventListener('click', (e)=>{
+        const btn = e.target.closest('[data-open-video]');
+        if(!btn) return;
+        const vid = VIDEOS.find(x => x.id === btn.getAttribute('data-open-video'));
+        if(!vid) return;
+        videoTitle.textContent = vid.title;
+        videoPlayer.src = vid.src;
+        videoPlayer.play();
+        videoModal.showModal();
+      });
+      document.getElementById('videoClose').addEventListener('click', closeVideo);
+      videoModal.addEventListener('close', closeVideo);
+      function closeVideo(){
+        videoPlayer.pause();
+        videoPlayer.removeAttribute('src');
+        videoPlayer.load();
+      }
+    }
+
+    // ===== VINH DANH =====
+    const honorTable = document.getElementById('honorTable');
+    function crownSvg(){
+      return `
+        <svg class="top1-crown" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M8 22l10 12 14-18 14 18 10-12 0 22H8V22z" fill="#F5B400" stroke="#8A6300" stroke-width="2"/>
+          <circle cx="16" cy="22" r="3" fill="#FFD14D"/><circle cx="48" cy="22" r="3" fill="#FFD14D"/><circle cx="32" cy="16" r="4" fill="#FFE38F" stroke="#8A6300" stroke-width="1"/>
+        </svg>`;
+    }
+    function renderHonor(){
+      const sorted = [...TOP_READERS].sort((a,b)=>b.visits - a.visits);
+      honorTable.innerHTML = sorted.map((u,idx)=>{
+        const isTop1 = idx===0;
+        const trClass = isTop1
+          ? 'top1-row shadow-glow ring-1 ring-gold-300 dark:ring-gold-700'
+          : (idx % 2 ? 'bg-slate-50/50 dark:bg-slate-900/30' : '');
+        const nameCell = isTop1
+          ? `
+            <div class="relative pl-9">
+              <span class="top1-glow"></span>
+              ${crownSvg()}
+              <span class="font-semibold">${u.name}</span>
+            </div>
+          `
+          : `<span>${u.name}</span>`;
+        const rankBadge = isTop1
+          ? `<span class="rank-badge">#1</span>`
+          : (idx<3 ? `<span class="text-amber-600 dark:text-amber-400 font-semibold">Top ${idx+1}</span>` : ``);
+        return `
+          <tr class="${trClass}">
+            <td class="relative px-3 py-2 font-bold">${idx+1}${isTop1?`<span class="shine-bar"></span>`:''}</td>
+            <td class="px-3 py-2">${nameCell}</td>
+            <td class="px-3 py-2 text-right font-medium">${u.visits.toLocaleString('vi-VN')}</td>
+            <td class="px-3 py-2 text-right">${rankBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ===== RENDER MANAGERS =====
+    const managerGrid = document.getElementById('managerGrid');
+    function renderManagers(){
+      managerGrid.innerHTML = MANAGERS.map(m => `
+        <article class="rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-soft p-5 flex items-center gap-5">
+          <img src="${m.avatar}" alt="${m.name}" class="w-28 h-28 object-cover rounded-xl border border-slate-200 dark:border-slate-700">
+          <div>
+            <h3 class="font-semibold text-lg"><span class="text-primary">${m.name}</span></h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">${m.role}</p>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    // ===== RENDER ACTIVITIES =====
+    const activityGrid = document.getElementById('activityGrid');
+    function renderActivities(){
+      activityGrid.innerHTML = ACTIVITIES.map(a=>`
+        <figure class="rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-soft">
+          <img src="${a.src}" alt="${a.alt||'Hoạt động'}" class="w-full aspect-[4/3] object-cover" loading="lazy">
+          <figcaption class="px-3 py-2 text-xs text-slate-600 dark:text-slate-300">${a.alt||''}</figcaption>
+        </figure>
+      `).join('');
+    }
+
+    // ===== SÁCH: render danh mục & lớp (QR + Drive + Reviews) =====
+    const categoryGrid = document.getElementById('categoryGrid');
+    const gradeGrid = document.getElementById('gradeGrid');
+    const btnBackCategory = document.getElementById('btnBackCategory');
+    let currentCategory = null;
+
+    function renderCategories(){
+      currentCategory = null;
+      btnBackCategory.classList.add('hidden');
+      gradeGrid.classList.add('hidden');
+      categoryGrid.classList.remove('hidden');
+
+      categoryGrid.innerHTML = CATEGORIES.map(cat=>`
+        <button data-cat="${cat.slug}" class="text-left rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-soft p-4 hover:shadow-md transition">
+          <div class="flex items-center gap-3">
+            <div class="text-2xl" aria-hidden="true">${cat.icon || '📚'}</div>
+            <div>
+              <h3 class="font-semibold">${cat.title}</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Nhấp để xem nội dung</p>
+            </div>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function renderGrades(cat){
+      currentCategory = cat;
+      btnBackCategory.classList.remove('hidden');
+      categoryGrid.classList.add('hidden');
+      gradeGrid.classList.remove('hidden');
+
+      gradeGrid.innerHTML = cat.grades.map(g=>{
+        const key = `${cat.slug}__${g.grade.replace(/\s+/g,'_')}`;
+        return `
+          <article class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-soft overflow-hidden" data-review-key="${key}">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 class="font-semibold">${cat.title} – <span class="text-primary">${g.grade}</span></h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Quét QR hoặc mở thư mục Google Drive.</p>
+            </div>
+            <div class="p-4 grid place-items-center">
+              <img src="${g.qr}" alt="QR ${cat.title} ${g.grade}" class="w-48 h-48 object-contain" loading="lazy">
+              <a href="${g.drive}" target="_blank" class="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm">Mở Google Drive</a>
+            </div>
+
+            <!-- ĐÁNH GIÁ & BÌNH LUẬN -->
+            <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/40">
+              <div class="flex items-center justify-between gap-3">
+                <h4 class="font-semibold">Đánh giá & bình luận</h4>
+                <span class="text-sm text-slate-600 dark:text-slate-300" data-avg>★ 0.0 (0)</span>
+              </div>
+
+              <!-- Chọn sao -->
+              <div class="mt-2 flex items-center gap-1" role="radiogroup" aria-label="Chọn số sao" data-stars>
+                ${[1,2,3,4,5].map(n=>`<button type="button" class="star" aria-checked="false" data-star="${n}" title="${n} sao">★</button>`).join('')}
+              </div>
+
+              <!-- Form nhập -->
+              <div class="mt-3 grid sm:grid-cols-2 gap-2">
+                <input type="text" placeholder="Tên hiển thị (tuỳ chọn)" class="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" data-name>
+                <input type="text" placeholder="Tiêu đề (tuỳ chọn)" class="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" data-title>
+              </div>
+              <textarea rows="3" placeholder="Chia sẻ cảm nhận về sách..." class="mt-2 w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700" data-text></textarea>
+
+              <div class="mt-2 flex items-center justify-end gap-2">
+                <button type="button" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-white/70 dark:hover:bg-white/10" data-clear>Nhập lại</button>
+                <button type="button" class="px-3 py-2 rounded-lg bg-primary text-white" data-submit>Gửi đánh giá</button>
+              </div>
+
+              <!-- Danh sách bình luận -->
+              <ul class="mt-4 space-y-3" data-list></ul>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      bindReviewPanels();
+    }
+
+    function bindReviewPanels(){
+      $$('#gradeGrid [data-review-key]').forEach(panel=>{
+        const key = panel.getAttribute('data-review-key');
+        const starWrap = panel.querySelector('[data-stars]');
+        const nameInput = panel.querySelector('[data-name]');
+        const titleInput = panel.querySelector('[data-title]');
+        const textArea = panel.querySelector('[data-text]');
+        const btnSubmit = panel.querySelector('[data-submit]');
+        const btnClear = panel.querySelector('[data-clear]');
+        const listEl = panel.querySelector('[data-list]');
+        const avgEl = panel.querySelector('[data-avg]');
+
+        let currentStars = 0;
+
+        // Chọn sao
+        starWrap.addEventListener('click', e=>{
+          const btn = e.target.closest('[data-star]');
+          if(!btn) return;
+          currentStars = Number(btn.getAttribute('data-star')) || 0;
+          starWrap.querySelectorAll('[data-star]').forEach(b=>{
+            const val = Number(b.getAttribute('data-star'));
+            const checked = val <= currentStars;
+            b.setAttribute('aria-checked', checked ? 'true':'false');
+            b.style.color = checked ? 'gold' : '';
+          });
+        });
+
+        // Xoá form
+        btnClear.addEventListener('click', ()=>{
+          currentStars = 0;
+          nameInput.value = '';
+          titleInput.value = '';
+          textArea.value = '';
+          starWrap.querySelectorAll('[data-star]').forEach(b=>{
+            b.setAttribute('aria-checked','false');
+            b.style.color = '';
+          });
+        });
+
+        // Gửi
+        btnSubmit.addEventListener('click', async ()=>{
+          const rating = currentStars;
+          const text = textArea.value.trim();
+          if (!rating){ alert('Vui lòng chọn số sao.'); return; }
+          if (!text){ alert('Vui lòng nhập nội dung bình luận.'); return; }
+          const review = {
+            name: nameInput.value.trim() || 'Ẩn danh',
+            title: titleInput.value.trim(),
+            text, rating
+          };
+          await saveReview(key, review);
+          renderList();
+          btnClear.click();
+        });
+
+        // Render danh sách + điểm trung bình
+        async function renderList(){
+          const data = await loadReviews(key);
+          data.sort((a,b)=> (b.ts||0) - (a.ts||0));
+          const {avg,count} = avgRating(data);
+          avgEl.textContent = `★ ${avg.toFixed(1)} (${count})`;
+
+          listEl.innerHTML = data.map(r=>{
+            const when = r.ts ? new Date(r.ts).toLocaleString('vi-VN') : '';
+            const stars = '★'.repeat(Number(r.rating)||0) + '☆'.repeat(5-(Number(r.rating)||0));
+            return `
+              <li class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+                <div class="flex items-center justify-between">
+                  <div class="font-medium">${escapeHtml(r.name||'Ẩn danh')}</div>
+                  <div class="text-sm" title="${r.rating} sao">${stars}</div>
+                </div>
+                ${r.title ? `<div class="mt-0.5 text-sm text-primary font-medium">${escapeHtml(r.title)}</div>`:''}
+                <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">${escapeHtml(r.text)}</p>
+                <div class="mt-1 text-xs text-slate-500">${when}</div>
+              </li>
+            `;
+          }).join('') || `<li class="text-sm text-slate-500">Chưa có bình luận nào. Hãy là người đầu tiên!</li>`;
+        }
+
+        // Khởi tạo
+        renderList();
+      });
+    }
+
+    // ===== LẮNG NGHE CHỌN DANH MỤC =====
+    categoryGrid.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-cat]');
+      if(!btn) return;
+      const cat = CATEGORIES.find(c => c.slug === btn.getAttribute('data-cat'));
+      if(cat) renderGrades(cat);
+    });
+
+    btnBackCategory.addEventListener('click', renderCategories);
+
+    // ===== ROUTER =====
+    const pageHome = document.getElementById('page-home');
+    const pageSach = document.getElementById('page-sach');
+    const pageVinhDanh = document.getElementById('page-vinh-danh');
+    const pageQuyenGop = document.getElementById('page-quyen-gop');
+
+    function showPage(name){
+      [pageHome, pageSach, pageVinhDanh, pageQuyenGop].forEach(sec=>sec.classList.add('hidden'));
+
+      if(name === 'sach'){
+        pageSach.classList.remove('hidden');
+        renderCategories();
+      } else if (name === 'vinh-danh'){
+        pageVinhDanh.classList.remove('hidden');
+        renderHonor();
+      } else if (name === 'quyen-gop'){
+        pageQuyenGop.classList.remove('hidden');
+      } else {
+        pageHome.classList.remove('hidden');
+        renderManagers();
+        renderActivities();
+      }
+      setActiveLink(name==='sach'?'sach':name==='vinh-danh'?'vinh-danh':name==='quyen-gop'?'quyen-gop':'home');
+      drawer.classList.add('-translate-x-full');
+    }
+
+    function handleRoute(){
+      const hash = (location.hash || '#home').replace('#','');
+      if (hash === 'sach'){
+        showPage('sach');
+      } else if (hash === 'vinh-danh'){
+        showPage('vinh-danh');
+      } else if (hash === 'quyen-gop'){
+        showPage('quyen-gop');
+      } else {
+        showPage('home');
+      }
+    }
+
+    // ===== INIT =====
+    renderVideos();
+    bindVideoEvents();
+    setActiveLink('home');
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('DOMContentLoaded', handleRoute);
+
+    // Đổi class active khi theme đổi
+    const observer = new MutationObserver(()=>setActiveLink(
+      (location.hash||'#home').includes('sach') ? 'sach'
+      : (location.hash||'#home').includes('vinh-danh') ? 'vinh-danh'
+      : (location.hash||'#home').includes('quyen-gop') ? 'quyen-gop'
+      : 'home'
+    ));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter:['class'] });
+  </script>
+</body>
+</html>
